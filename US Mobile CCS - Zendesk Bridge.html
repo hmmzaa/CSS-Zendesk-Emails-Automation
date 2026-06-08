@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Support Dashboard</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ── BASE & VARIABLES ── */
+:root {
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-sans);
+  background-color: #e5e7eb;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.root {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  font-size: 13px;
+  width: 100%;
+  max-width: 1280px;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.topbar {height:42px;background:#03363D;display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0}
+.tb-logo {font-size:12px;font-weight:600;color:white;letter-spacing:.01em;display:flex;align-items:center;gap:6px}
+.tb-sep {width:1px;height:18px;background:rgba(255,255,255,.2)}
+.tb-agent {font-size:11px;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:5px}
+.tb-dot {width:6px;height:6px;border-radius:50%;background:#22c55e}
+.tb-right {margin-left:auto;display:flex;align-items:center;gap:8px}
+.tb-clock {font-size:11px;color:rgba(255,255,255,.45);font-family:var(--font-mono)}
+.tb-pill {font-size:10px;font-weight:500;padding:2px 8px;border-radius:4px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.18)}
+
+.workspace {display:grid;grid-template-columns:300px 1fr;min-height:560px}
+
+/* ── CCS PANEL ── */
+.ccs {background:#141b22;display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.06)}
+.ccs-head {padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.ccs-title {font-size:11px;font-weight:500;color:rgba(255,255,255,.6)}
+.ccs-status {margin-left:auto;display:flex;align-items:center;gap:5px;font-size:10px;color:rgba(255,255,255,.45)}
+.ccs-timer-bar {padding:5px 14px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.ccs-timer {font-family:var(--font-mono);font-size:14px;font-weight:500;color:rgba(255,255,255,.8)}
+.ccs-body {flex:1;position:relative;overflow:hidden}
+.ccs-screen {position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;transition:opacity .3s; opacity:0; pointer-events:none;}
+.ccs-screen.active {opacity:1; pointer-events:auto;}
+
+/* idle */
+.idle-icon {width:50px;height:50px;border-radius:14px;background:rgba(59,130,246,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:22px}
+.idle-t {font-size:14px;font-weight:500;color:rgba(255,255,255,.7);margin-bottom:4px;text-align:center}
+.idle-s {font-size:11px;color:rgba(255,255,255,.3);margin-bottom:20px;text-align:center}
+.sim-btn {width:100%;padding:9px;background:rgba(2,192,154,.12);border:1.5px dashed rgba(2,192,154,.4);border-radius:7px;color:#02C09A;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s}
+.sim-btn:hover {background:rgba(2,192,154,.2)}
+
+/* ringing */
+.ring-wrap {text-align:center;width:100%}
+.ring-pulse {width:64px;height:64px;border-radius:50%;border:2px solid rgba(34,197,94,.35);background:rgba(34,197,94,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:22px;animation:pulse 1.4s ease-in-out infinite}
+.ring-label {font-size:9px;font-weight:500;letter-spacing:2px;color:#22c55e;margin-bottom:5px}
+.ring-name {font-size:18px;font-weight:500;color:white;margin-bottom:3px}
+.ring-num {font-size:11px;color:rgba(255,255,255,.35);font-family:var(--font-mono);margin-bottom:24px}
+.ring-btns {display:flex;gap:10px}
+.ring-btn {flex:1;padding:9px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;border:none;font-family:var(--font-sans);transition:all .15s}
+.rb-reject {background:rgba(255,255,255,.07);color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.12)}
+.rb-reject:hover {background:rgba(255,255,255,.12)}
+.rb-accept {background:#22c55e;color:white}
+.rb-accept:hover {background:#16a34a}
+
+/* active */
+.active-wrap {width:100%;text-align:center}
+.live-badge {display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:500;padding:2px 8px;border-radius:4px;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);margin-bottom:14px}
+.live-dot {width:5px;height:5px;border-radius:50%;background:#ef4444;animation:blink 1s infinite}
+.active-name {font-size:17px;font-weight:500;color:white;margin-bottom:2px}
+.active-num {font-size:11px;color:rgba(255,255,255,.35);font-family:var(--font-mono);margin-bottom:18px}
+.call-timer {font-family:var(--font-mono);font-size:28px;font-weight:500;color:#02C09A;margin-bottom:6px}
+.call-net {font-size:11px;color:rgba(255,255,255,.35);margin-bottom:22px}
+.ctrl-grid {display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.ctrl {display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:all .15s; opacity:0.7}
+.ctrl:hover {opacity:1}
+.ctrl.active .ctrl-icon {background:#02C09A; border-color:#02C09A; color:#04342C;}
+.ctrl.active .ctrl-icon i {color:#04342C !important;}
+.ctrl.active {opacity:1}
+.ctrl-icon {width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:15px; transition:all .2s;}
+.ctrl-lbl {font-size:10px;color:rgba(255,255,255,.4)}
+.end-btn {width:100%;padding:11px;background:#ef4444;border:none;border-radius:7px;color:white;font-size:12px;font-weight:500;cursor:pointer;transition:background .15s}
+.end-btn:hover {background:#dc2626}
+
+/* wrapup */
+.wu-wrap {width:100%;display:flex;flex-direction:column;gap:10px}
+.wu-top {display:flex;justify-content:space-between;align-items:center}
+.wu-tag {font-size:9px;font-weight:500;padding:2px 8px;border-radius:4px;background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.25)}
+.wu-dur {font-size:11px;font-family:var(--font-mono);color:rgba(255,255,255,.3)}
+.wu-label {font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.35);margin-bottom:3px}
+.wu-select {width:100%;padding:7px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;font-size:12px;color:white;outline:none;font-family:var(--font-sans); cursor:pointer;}
+.wu-select option {background:#1e2a38;color:white}
+.ai-box {background:rgba(2,192,154,.06);border:1px solid rgba(2,192,154,.2);border-radius:7px;padding:11px}
+.ai-toggle-row {display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.toggle {width:34px;height:19px;border-radius:10px;background:#02C09A;position:relative;cursor:pointer;flex-shrink:0}
+.toggle::after {content:'';position:absolute;top:2px;right:2px;width:15px;height:15px;border-radius:50%;background:white;transition:right .2s}
+.toggle.off {background:rgba(255,255,255,.15)}
+.toggle.off::after {right:auto;left:2px}
+.ai-toggle-label {font-size:12px;font-weight:500;color:#02C09A}
+.wu-textarea {width:100%;min-height:54px;background:rgba(255,255,255,.06);border:1px solid rgba(2,192,154,.25);border-radius:6px;padding:7px 10px;font-size:12px;color:rgba(255,255,255,.8);resize:none;outline:none;font-family:var(--font-sans)}
+.wu-textarea::placeholder {color:rgba(255,255,255,.25)}
+.chip-row {display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+.chip {font-size:10px;font-weight:500;padding:2px 8px;border-radius:4px;cursor:pointer;border:1px solid;transition:all .15s}
+.chip-a {color:#a78bfa;border-color:rgba(167,139,250,.25);background:rgba(167,139,250,.08)}
+.chip-a:hover {background:rgba(167,139,250,.18)}
+.chip-b {color:#34d399;border-color:rgba(52,211,153,.25);background:rgba(52,211,153,.08)}
+.chip-b:hover {background:rgba(52,211,153,.18)}
+.chip-c {color:#fbbf24;border-color:rgba(251,191,36,.25);background:rgba(251,191,36,.08)}
+.chip-c:hover {background:rgba(251,191,36,.18)}
+
+/* ai preview */
+.aip {background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:7px;overflow:hidden}
+.aip-head {padding:7px 11px;background:rgba(167,139,250,.1);border-bottom:1px solid rgba(167,139,250,.15);display:flex;align-items:center;justify-content:space-between}
+.aip-title {font-size:11px;font-weight:500;color:#a78bfa;display:flex;align-items:center;gap:5px}
+.aip-body {padding:10px 11px;font-size:11px;color:rgba(255,255,255,.6);line-height:1.6;max-height:120px;overflow-y:auto}
+.aip-subj {font-size:11px;font-weight:500;color:rgba(255,255,255,.85);margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.07)}
+.spin {width:11px;height:11px;border:1.5px solid rgba(167,139,250,.3);border-top-color:#a78bfa;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.spin.show {display:inline-block}
+
+.wu-submit {width:100%;padding:10px;background:#02C09A;border:none;border-radius:7px;color:#04342C;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+.wu-submit:hover:not(:disabled) {background:#00a884}
+.wu-submit:disabled {opacity:.45;cursor:not-allowed}
+.wu-submit.done {background:#16a34a;color:white}
+
+/* loading */
+.loading-wrap {text-align:center; width:100%;}
+.ld-spinner {width:30px;height:30px;border:3px solid rgba(2,192,154,.2);border-top-color:#02C09A;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
+.ld-text {font-size:13px;font-weight:500;color:white;}
+.ld-sub {font-size:11px;color:rgba(255,255,255,.5);margin-top:4px}
+.ld-steps {margin-top:20px;display:flex;flex-direction:column;gap:10px; text-align:left;}
+.ld-step {display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);font-size:11px;color:rgba(255,255,255,.4);transition:all .3s}
+.ld-step.active {background:rgba(2,192,154,.08);border-color:rgba(2,192,154,.25);color:#02C09A}
+.ld-step.done {background:rgba(34,197,94,.07);border-color:rgba(34,197,94,.2);color:#4ade80}
+.ld-step-dot {width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15);flex-shrink:0}
+.ld-step.active .ld-step-dot {background:#02C09A;animation:blink 1s infinite}
+.ld-step.done .ld-step-dot {background:#22c55e}
+
+/* done */
+.done-wrap {text-align:center}
+.done-icon {width:52px;height:52px;border-radius:50%;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:22px}
+.done-t {font-size:14px;font-weight:500;color:#4ade80;margin-bottom:4px}
+.done-s {font-size:11px;color:rgba(255,255,255,.35);margin-bottom:16px}
+.done-ticket {background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:8px 12px;text-align:left;font-size:11px;color:rgba(255,255,255,.5)}
+.done-ticket span {color:#02C09A;font-weight:500}
+
+/* ── ZD PANEL ── */
+.zd-panel {display:flex;background:white}
+.zd-rail {width:44px;background:#15343A;display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:5px;flex-shrink:0}
+.zd-icon {width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);cursor:pointer;transition:all .15s;font-size:15px}
+.zd-icon:hover {background:rgba(255,255,255,.1);color:white}
+.zd-icon.active {background:rgba(255,255,255,.1);color:#5ba7db}
+.zd-content {flex:1;display:flex;flex-direction:column;min-width:0}
+
+/* ticket header */
+.zd-th {padding:12px 18px;border-bottom:1px solid #e5e7eb;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-shrink:0}
+.zd-th-title {font-size:15px;font-weight:600;color:#111827;margin-bottom:4px;}
+.zd-th-meta {font-size:11px;color:#6b7280;font-family:var(--font-mono)}
+.zd-th-actions {display:flex;gap:8px;flex-shrink:0}
+.zd-btn {padding:6px 12px;border-radius:5px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid #d1d5db;background:white;color:#374151;transition:all .15s}
+.zd-btn:hover {background:#f9fafb}
+.zd-btn-primary {background:#2563eb;color:white;border-color:#2563eb}
+.zd-btn-primary:hover {background:#1d4ed8}
+.zd-status {font-size:11px;padding:6px 10px;border-radius:5px;border:1px solid #d1d5db;color:#374151;background:white;cursor:pointer;outline:none}
+
+/* thread */
+.zd-thread {flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:14px;background:#f9fafb}
+.msg {display:flex;gap:10px}
+.msg-av {width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.av-agent {background:#15343A;color:white}
+.av-ai {background:linear-gradient(135deg,#2563eb,#7c3aed);color:white}
+.msg-body {flex:1}
+.msg-hd {display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.msg-author {font-size:12px;font-weight:600;color:#111827}
+.msg-time {font-size:10px;color:#9ca3af;font-family:var(--font-mono)}
+.msg-bdg {font-size:9px;font-weight:500;padding:2px 6px;border-radius:3px}
+.bdg-ai {background:#ede9fe;color:#7c3aed}
+.bdg-auto {background:#dbeafe;color:#1d4ed8}
+.bdg-int {background:#fef08a;color:#854d0e}
+.msg-card {background:white;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,0.02)}
+.mc-top {padding:8px 12px;background:#f9fafb;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:6px}
+.mc-via {font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;background:#e5e7eb;color:#374151}
+.mc-lbl {font-size:10px;color:#6b7280}
+.mc-body {padding:14px 14px;font-size:13px;line-height:1.65;color:#374151}
+.mc-subj {font-weight:600;color:#111827;font-size:13px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #f3f4f6}
+.sys-event {padding:12px 14px;background:white;border:1px solid #e5e7eb;border-radius:8px;font-size:12px;color:#374151;font-family:var(--font-mono); box-shadow:0 1px 2px rgba(0,0,0,0.02)}
+.zd-tag {font-size:10px;font-weight:500;padding:2px 6px;border-radius:4px;margin-right:4px; display:inline-block;}
+.tag-drop {background:#ede9fe;color:#7c3aed}
+.tag-auto {background:#dbeafe;color:#1d4ed8}
+.tag-open {background:#fee2e2;color:#dc2626}
+.tag-pending {background:#fef3c7;color:#d97706}
+.tag-solved {background:#dcfce7;color:#16a34a}
+
+/* reply box */
+.zd-reply {border-top:1px solid #e5e7eb;background:white;flex-shrink:0}
+.zd-reply-tabs {display:flex;border-bottom:1px solid #e5e7eb;background:#f9fafb}
+.zd-rtab {padding:10px 16px;font-size:12px;font-weight:600;color:#6b7280;cursor:pointer;border-top:2px solid transparent}
+.zd-rtab.active {color:#111827;border-top-color:#2563eb;background:white}
+.zd-reply-area {padding:12px 16px; transition: background 0.2s;}
+.zd-reply-ta {width:100%;min-height:60px;resize:none;border:none;outline:none;font-size:13px;color:#374151;font-family:var(--font-sans);background:transparent}
+.zd-reply-foot {padding:10px 16px;border-top:1px solid #f3f4f6;display:flex;justify-content:flex-end;gap:8px}
+
+/* Utilities */
+.internal-note-bg { background-color: #fef9c3 !important; }
+
+@keyframes pulse {0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes blink {0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes spin {to{transform:rotate(360deg)}}
+@keyframes fadeUp {from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade-up {animation:fadeUp .3s ease forwards}
+</style>
+</head>
+<body>
+
+<div class="root">
+<div class="topbar">
+  <div class="tb-logo"><i class="ti ti-phone" aria-hidden="true"></i> CCS <span style="color:rgba(255,255,255,.3)">→</span> ZD <span style="background:#02C09A;color:#04342C;font-size:9px;padding:2px 6px;border-radius:3px;font-weight:600">BRIDGE</span></div>
+  <div class="tb-sep"></div>
+  <div class="tb-agent"><div class="tb-dot"></div>Agent: <strong style="color:white; font-weight: 500;">Hamza M.</strong></div>
+  <div class="tb-right">
+    <div class="tb-clock" id="clock">09:00 AM</div>
+    <div class="tb-pill">Queue: 3</div>
+    <div class="tb-pill" id="state-pill">Ready</div>
+  </div>
+</div>
+
+<div class="workspace">
+
+<div class="ccs">
+  <div class="ccs-head">
+    <i class="ti ti-phone" style="color:rgba(255,255,255,.4);font-size:13px" aria-hidden="true"></i>
+    <span class="ccs-title">Call Center Studio</span>
+    <div class="ccs-status"><div class="tb-dot"></div><span>Ready</span></div>
+  </div>
+  <div class="ccs-timer-bar">
+    <span style="font-size:10px;color:rgba(255,255,255,.3)">Duration</span>
+    <span class="ccs-timer" id="timer-display">00:00</span>
+  </div>
+  <div class="ccs-body">
+
+    <div class="ccs-screen active" id="sc-idle">
+      <div class="idle-icon"><i class="ti ti-phone" style="color:#3b82f6;font-size:20px" aria-hidden="true"></i></div>
+      <div class="idle-t">Waiting for calls</div>
+      <div class="idle-s">You're available in the queue</div>
+      <button class="sim-btn" onclick="startRinging()"><i class="ti ti-player-play" aria-hidden="true"></i> Simulate inbound call</button>
+    </div>
+
+    <div class="ccs-screen" id="sc-ring">
+      <div class="ring-wrap">
+        <div class="ring-pulse"><i class="ti ti-phone-incoming" style="color:#22c55e;font-size:22px" aria-hidden="true"></i></div>
+        <div class="ring-label">INCOMING CALL</div>
+        <div class="ring-name">Sarah Jenkins</div>
+        <div class="ring-num">+1 (555) 019-4822</div>
+        <div class="ring-btns">
+          <button class="ring-btn rb-reject" onclick="rejectCall()">Reject</button>
+          <button class="ring-btn rb-accept" onclick="acceptCall()">Accept</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="ccs-screen" id="sc-active">
+      <div class="active-wrap">
+        <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+        <div class="active-name">Sarah Jenkins</div>
+        <div class="active-num">+1 (555) 019-4822</div>
+        <div class="call-timer" id="call-timer">00:00</div>
+        <div class="call-net">LightSpeed (T-Mobile)</div>
+        <div class="ctrl-grid">
+          <div class="ctrl" onclick="toggleCtrl(this)"><div class="ctrl-icon"><i class="ti ti-microphone-off" aria-hidden="true" style="color:rgba(255,255,255,.6)"></i></div><div class="ctrl-lbl">Mute</div></div>
+          <div class="ctrl" onclick="toggleCtrl(this)"><div class="ctrl-icon"><i class="ti ti-player-pause" aria-hidden="true" style="color:rgba(255,255,255,.6)"></i></div><div class="ctrl-lbl">Hold</div></div>
+          <div class="ctrl" onclick="triggerTransfer(this)"><div class="ctrl-icon"><i class="ti ti-arrow-right" aria-hidden="true" style="color:rgba(255,255,255,.6)"></i></div><div class="ctrl-lbl" id="lbl-transfer">Transfer</div></div>
+          <div class="ctrl" onclick="toggleCtrl(this)"><div class="ctrl-icon"><i class="ti ti-hash" aria-hidden="true" style="color:rgba(255,255,255,.6)"></i></div><div class="ctrl-lbl">Keypad</div></div>
+          <div class="ctrl" onclick="toggleCtrl(this)"><div class="ctrl-icon"><i class="ti ti-circle" aria-hidden="true" style="color:rgba(255,255,255,.6)"></i></div><div class="ctrl-lbl">Record</div></div>
+          <div class="ctrl" onclick="toggleCtrl(this)"><div class="ctrl-icon"><i class="ti ti-notes" aria-hidden="true" style="color:rgba(255,255,255,.6)"></i></div><div class="ctrl-lbl">Notes</div></div>
+        </div>
+        <button class="end-btn" onclick="dropCall()"><i class="ti ti-phone-off" aria-hidden="true"></i> End Call</button>
+      </div>
+    </div>
+
+    <div class="ccs-screen" id="sc-wrapup" style="justify-content:flex-start;padding-top:14px;overflow-y:auto">
+      <div class="wu-wrap">
+        <div class="wu-top">
+          <span class="wu-tag">Wrap-up</span>
+          <span class="wu-dur" id="wu-dur">00:00</span>
+        </div>
+        <div>
+          <div class="wu-label">Disposition</div>
+          <select class="wu-select" id="wu-disp" onchange="onDisp()">
+            <option value="">Select outcome...</option>
+            <option value="Dropped">Call Dropped</option>
+            <option value="Resolved">Resolved</option>
+            <option value="Transferred">Transferred</option>
+          </select>
+        </div>
+        <div class="ai-box" id="ai-section" style="display:none">
+          <div class="ai-toggle-row">
+            <div class="toggle" id="ai-toggle" onclick="toggleAI()"></div>
+            <div>
+              <div class="ai-toggle-label">AI Follow-Up Email</div>
+              <div style="font-size:10px;color:rgba(2,192,154,.6)">Auto-creates Zendesk ticket based on notes</div>
+            </div>
+          </div>
+          <div id="ai-notes-wrap">
+            <div class="wu-label" style="margin-bottom:3px">Quick notes (Type to update AI draft)</div>
+            <textarea class="wu-textarea" id="wu-notes" onkeyup="debouncePreview()" placeholder="Type your call notes here...">eSIM QR not received — needs resend</textarea>
+            <div class="chip-row">
+              <span class="chip chip-a" onclick="setNote('eSIM QR not received — needs resend')">eSIM QR</span>
+              <span class="chip chip-b" onclick="setNote('Billing dispute — refund discussed')">Billing</span>
+              <span class="chip chip-c" onclick="setNote('Port-in pending — carrier confirmation needed')">Port-in</span>
+            </div>
+          </div>
+        </div>
+        <div class="aip" id="ai-preview" style="display:none">
+          <div class="aip-head">
+            <div class="aip-title"><div class="spin" id="ai-spin"></div><span id="ai-label">AI draft preview</span></div>
+            <span style="font-size:10px;color:rgba(167,139,250,.6);cursor:pointer" onclick="genPreview()">Regenerate</span>
+          </div>
+          <div class="aip-body">
+            <div class="aip-subj" id="ai-subj"></div>
+            <div id="ai-content"></div>
+          </div>
+        </div>
+        <button class="wu-submit" id="wu-submit" onclick="submitWU()">
+          <i class="ti ti-send" aria-hidden="true"></i>
+          <span id="wu-submit-txt">Send follow-up + create ticket</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="ccs-screen" id="sc-loading">
+      <div class="loading-wrap">
+        <div class="ld-spinner"></div>
+        <div class="ld-text" id="ld-text">Initializing...</div>
+        <div class="ld-sub" id="ld-sub">Please wait</div>
+        <div class="ld-steps">
+          <div class="ld-step" id="ls0"><div class="ld-step-dot"></div>CCS webhook fired</div>
+          <div class="ld-step" id="ls1"><div class="ld-step-dot"></div>Claude generating email</div>
+          <div class="ld-step" id="ls2"><div class="ld-step-dot"></div>Zendesk ticket created</div>
+          <div class="ld-step" id="ls3"><div class="ld-step-dot"></div>Email sent to customer</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ccs-screen" id="sc-done">
+      <div class="done-wrap">
+        <div class="done-icon"><i class="ti ti-circle-check" style="color:#4ade80;font-size:22px" aria-hidden="true"></i></div>
+        <div class="done-t">Follow-up Complete</div>
+        <div class="done-s">Check the Zendesk panel.</div>
+        <button class="sim-btn" style="margin-top:14px" onclick="resetAll()"><i class="ti ti-refresh" aria-hidden="true"></i> Reset demonstration</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="zd-panel">
+  <div class="zd-rail">
+    <div class="zd-icon" onclick="alert('Navigating to Home')"><i class="ti ti-home" aria-hidden="true"></i></div>
+    <div class="zd-icon active"><i class="ti ti-ticket" aria-hidden="true"></i></div>
+    <div class="zd-icon" onclick="alert('Navigating to Users')"><i class="ti ti-user" aria-hidden="true"></i></div>
+    <div class="zd-icon" onclick="alert('Navigating to Reports')"><i class="ti ti-chart-bar" aria-hidden="true"></i></div>
+    <div style="margin-top:auto"><div class="zd-icon" onclick="alert('Navigating to Settings')"><i class="ti ti-settings" aria-hidden="true"></i></div></div>
+  </div>
+  <div class="zd-content">
+    <div class="zd-th">
+      <div>
+        <div class="zd-th-title" id="zd-main-title">No Active Ticket</div>
+        <div class="zd-th-meta" id="zd-main-meta">Waiting for incoming call...</div>
+      </div>
+      <div class="zd-th-actions">
+        <select class="zd-status" id="zd-status" onchange="updateTagFromSelect(this)"><option value="Open">Open</option><option value="Pending">Pending</option><option value="Solved">Solved</option></select>
+        <button class="zd-btn" id="btn-merge" onclick="triggerActionBtn('btn-merge', 'Merge', 'Merged!')">Merge</button>
+        <button class="zd-btn zd-btn-primary" id="btn-macro" onclick="triggerActionBtn('btn-macro', 'Apply macro', 'Macro applied!')">Apply macro</button>
+      </div>
+    </div>
+    
+    <div class="zd-thread" id="zd-thread"></div>
+    
+    <div class="zd-reply">
+      <div class="zd-reply-tabs">
+        <div class="zd-rtab active" onclick="setReplyTab(this, 'public')">Public reply</div>
+        <div class="zd-rtab" onclick="setReplyTab(this, 'internal')">Internal note</div>
+      </div>
+      <div class="zd-reply-area" id="reply-area">
+          <textarea class="zd-reply-ta" id="zd-ta" placeholder="Write a reply..."></textarea>
+      </div>
+      <div class="zd-reply-foot">
+        <button class="zd-btn" onclick="discardReply()">Discard</button>
+        <button class="zd-btn zd-btn-primary" onclick="submitReply()">Submit as Open</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+let timerInt = null, secs = 0, state = 'idle', aiOn = true, draft = null, callDur = '00:00';
+let typingTimer;
+
+function fmt(s){ return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
+function now(){ const d=new Date(); let h=d.getHours(), m=d.getMinutes(), ap=h>=12?'PM':'AM'; h=h%12||12; return `${h}:${m.toString().padStart(2,'0')} ${ap}`; }
+function updateClock(){ document.getElementById('clock').textContent=now(); }
+updateClock(); setInterval(updateClock, 10000);
+
+function show(id){
+    document.querySelectorAll('.ccs-screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+function sysEvent(icon, txt){
+  const t = document.getElementById('zd-thread');
+  if(!t) return;
+  t.insertAdjacentHTML('beforeend', `
+  <div class="msg fade-up" style="opacity:.8">
+    <div class="msg-av" style="background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb; font-size: 14px;"><i class="ti ${icon}"></i></div>
+    <div class="msg-body">
+      <div class="msg-hd"><span class="msg-author" style="color:#6b7280; font-weight: 500;">System</span><span class="msg-time">${now()}</span></div>
+      <div class="sys-event">${txt}</div>
+    </div>
+  </div>`);
+  setTimeout(() => t.scrollTo({ top: t.scrollHeight, behavior: 'smooth' }), 50);
+}
+
+/* ── Interactive CCS Controls ── */
+function toggleCtrl(el) { el.classList.toggle('active'); }
+function triggerTransfer(el) {
+    el.classList.add('active');
+    document.getElementById('lbl-transfer').innerText = "Routing...";
+    setTimeout(() => {
+        el.classList.remove('active');
+        document.getElementById('lbl-transfer').innerText = "Transfer";
+    }, 1500);
+}
+
+/* ── Zendesk Interactive Reply Area ── */
+let currentTabType = 'public';
+function setReplyTab(el, type) {
+    document.querySelectorAll('.zd-rtab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    currentTabType = type;
+    const area = document.getElementById('reply-area');
+    const ta = document.getElementById('zd-ta');
+    if(type === 'internal') {
+        area.classList.add('internal-note-bg');
+        ta.placeholder = "Write an internal note...";
+    } else {
+        area.classList.remove('internal-note-bg');
+        ta.placeholder = "Write a reply...";
+    }
+}
+function discardReply() {
+    document.getElementById('zd-ta').value = '';
+}
+function submitReply() {
+    const ta = document.getElementById('zd-ta');
+    const txt = ta.value.trim();
+    if(!txt) return;
+    
+    const t = document.getElementById('zd-thread');
+    const isInternal = currentTabType === 'internal';
+    const bgClass = isInternal ? 'internal-note-bg' : '';
+    const lbl = isInternal ? 'Internal note' : 'Public reply';
+    const bdg = isInternal ? '<span class="msg-bdg bdg-int">Internal</span>' : '';
+    const bodyFormat = txt.replace(/\n/g, '<br>');
+
+    t.insertAdjacentHTML('beforeend',`
+    <div class="msg fade-up">
+      <div class="msg-av av-agent">HM</div>
+      <div class="msg-body">
+        <div class="msg-hd">
+          <span class="msg-author">Hamza M.</span>
+          ${bdg}
+          <span class="msg-time">${now()}</span>
+        </div>
+        <div class="msg-card">
+          <div class="mc-top ${bgClass}"><span class="mc-via">Web</span><span class="mc-lbl">${lbl}</span></div>
+          <div class="mc-body ${bgClass}">${bodyFormat}</div>
+        </div>
+      </div>
+    </div>`);
+    ta.value = '';
+    setTimeout(() => t.scrollTo({ top: t.scrollHeight, behavior: 'smooth' }), 100);
+}
+
+/* ── Zendesk Interactive Header Buttons ── */
+function triggerActionBtn(id, original, feedback) {
+    const btn = document.getElementById(id);
+    btn.innerText = feedback;
+    setTimeout(() => { btn.innerText = original; }, 1500);
+}
+function updateTagFromSelect(sel) {
+    const val = sel.value;
+    const tagSpan = document.getElementById('zd-tags-span');
+    if(!tagSpan) return;
+    
+    tagSpan.style.display = 'inline-block';
+    if(val === 'Open') tagSpan.innerHTML = '<span class="zd-tag tag-open">Open</span>';
+    else if(val === 'Pending') tagSpan.innerHTML = '<span class="zd-tag tag-pending">Pending</span>';
+    else if(val === 'Solved') tagSpan.innerHTML = '<span class="zd-tag tag-solved">Solved</span>';
+}
+
+/* ── Phone Call Simulation Flow ── */
+function startRinging(){
+  show('sc-ring');
+  document.getElementById('state-pill').textContent = 'Ringing';
+  document.getElementById('zd-main-title').innerText = "Incoming Call: Sarah Jenkins";
+  
+  // Safe insertion that ensures the span tag is created for later use
+  document.getElementById('zd-main-meta').innerHTML = '+1 (555) 019-4822 <span id="zd-tags-span" style="display:none;"></span>';
+  
+  sysEvent('ti-phone-incoming', 'Inbound call ringing from +1 (555) 019-4822');
+}
+
+function rejectCall(){
+  show('sc-idle');
+  document.getElementById('state-pill').textContent = 'Ready';
+  sysEvent('ti-phone-off', 'Call rejected by Agent');
+  document.getElementById('zd-main-title').innerText = "No Active Ticket";
+  document.getElementById('zd-main-meta').innerHTML = 'Waiting for incoming call... <span id="zd-tags-span" style="display:none;"></span>';
+}
+
+function acceptCall(){
+  show('sc-active');
+  secs = 0;
+  document.getElementById('call-timer').textContent = '00:00';
+  document.getElementById('zd-main-title').innerText = "Active Call: Sarah Jenkins";
+  sysEvent('ti-bolt', 'Call connected — Sarah Jenkins +1 (555) 019-4822');
+  
+  timerInt = setInterval(() => {
+    secs++;
+    const t = fmt(secs);
+    document.getElementById('call-timer').textContent = t;
+    document.getElementById('timer-display').textContent = t;
+  }, 1000);
+  document.getElementById('state-pill').textContent = 'On call';
+}
+
+function dropCall(){
+  clearInterval(timerInt);
+  callDur = fmt(secs);
+  document.getElementById('wu-dur').textContent = callDur;
+  show('sc-wrapup');
+  document.getElementById('wu-disp').value = 'Dropped';
+  document.getElementById('ai-section').style.display = 'block';
+  sysEvent('ti-microphone-off', `Call ended — Duration: ${callDur}`);
+  document.getElementById('state-pill').textContent = 'Wrap-up';
+  
+  genPreview();
+}
+
+function onDisp(){
+    const v = document.getElementById('wu-disp').value;
+    document.getElementById('ai-section').style.display = v ? 'block' : 'none';
+    if(v) genPreview();
+}
+
+function toggleAI(){
+    aiOn = !aiOn;
+    const t = document.getElementById('ai-toggle');
+    t.classList.toggle('off', !aiOn);
+    document.getElementById('ai-notes-wrap').style.display = aiOn ? 'block' : 'none';
+    document.getElementById('ai-preview').style.display = (aiOn && draft) ? 'block' : 'none';
+}
+
+function setNote(t){
+    document.getElementById('wu-notes').value = t;
+    genPreview();
+}
+
+/* ── AI Draft Logic ── */
+function debouncePreview() {
+    clearTimeout(typingTimer);
+    if(document.getElementById('wu-disp').value) {
+        typingTimer = setTimeout(genPreview, 600); 
+    }
+}
+
+function genPreview(){
+  if(!aiOn) return;
+  const prev = document.getElementById('ai-preview');
+  prev.style.display = 'block';
+  document.getElementById('ai-spin').classList.add('show');
+  document.getElementById('ai-label').textContent = 'AI is updating draft...';
+  
+  setTimeout(() => {
+    const rawNotes = document.getElementById('wu-notes').value.trim() || 'No notes provided.';
+    const textLower = rawNotes.toLowerCase();
+    
+    let genSubj = "Follow-up regarding our call";
+    let genBody = `Hi Sarah,\n\nIt looks like we got disconnected. I'm actively looking into your issue based on what we discussed:\n\n"${rawNotes}"\n\nI will keep you updated. Please reply here if you have anything to add.\n\nBest,\nUS Mobile Support`;
+
+    if(textLower.includes('esim') || textLower.includes('qr')) {
+        genSubj = "Action required: Complete your eSIM setup";
+        genBody = `Hi Sarah,\n\nIt looks like we got disconnected while working through your eSIM setup on your iPhone. \n\nMy notes state: "${rawNotes}"\n\nHere's what to do next to get connected:\n1. Check your inbox for the QR code email\n2. Go to Settings → Cellular → Add eSIM → Use QR Code\n3. Scan the QR code, then restart your device\n\nIf you haven't received the QR code, just reply to this email and we'll get a new one sent right away!\n\nBest,\nUS Mobile Support`;
+    } 
+    else if (textLower.includes('bill') || textLower.includes('refund')) {
+        genSubj = "Update on your billing concern";
+        genBody = `Hi Sarah,\n\nWe got disconnected, but I am looking into your account right away.\n\nMy notes state: "${rawNotes}"\n\nI am currently reviewing the charges and will process any necessary adjustments. I will update this ticket as soon as it's resolved.\n\nBest,\nUS Mobile Support`;
+    }
+    else if (textLower.includes('port') || textLower.includes('transfer')) {
+        genSubj = "Status of your number transfer";
+        genBody = `Hi Sarah,\n\nWe got disconnected, but I wanted to follow up on your number port-in request.\n\nMy notes state: "${rawNotes}"\n\nWe are currently awaiting confirmation from your previous carrier. Once they release the number, your US Mobile service will activate automatically.\n\nBest,\nUS Mobile Support`;
+    }
+
+    draft = { subject: genSubj, body: genBody };
+    document.getElementById('ai-subj').textContent = draft.subject;
+    document.getElementById('ai-content').innerHTML = draft.body.split('\n').map(l => l ? `<p style="margin-bottom:4px">${l}</p>` : '').join('');
+    document.getElementById('ai-spin').classList.remove('show');
+    document.getElementById('ai-label').textContent = 'AI draft preview';
+  }, 600);
+}
+
+/* ── Webhook Submission & UI Injection ── */
+function submitWU(){
+    if(!document.getElementById('wu-disp').value) {
+        alert("Please select a disposition outcome first.");
+        return;
+    }
+    
+    // Disable button to prevent double-click race conditions
+    const btn = document.getElementById('wu-submit');
+    if(btn && btn.disabled) return;
+    if(btn) btn.disabled = true;
+
+    if(!draft && aiOn) {
+        genPreview();
+    }
+
+    show('sc-loading');
+    document.getElementById('state-pill').textContent = 'Sending';
+    
+    const steps = [
+        {l:'CCS webhook fired', s:'Sending wrap-up data to Bridge'},
+        {l:'Claude generating email', s:'AI finalizing custom email'},
+        {l:'Zendesk ticket created', s:'Calling Zendesk REST API'},
+        {l:'Email sent to customer', s:'Delivered to sarah.jenkins@example.com'}
+    ];
+    
+    let i = 0;
+    const iv = setInterval(() => {
+        if(i > 0) {
+            const p = document.getElementById('ls' + (i-1));
+            if(p) p.classList.replace('active', 'done');
+        }
+        
+        if(i < steps.length) {
+            const el = document.getElementById('ls' + i);
+            if(el) el.classList.add('active');
+            
+            const tEl = document.getElementById('ld-text');
+            const sEl = document.getElementById('ld-sub');
+            if(tEl) tEl.textContent = steps[i].l;
+            if(sEl) sEl.textContent = steps[i].s;
+            i++;
+        } else {
+            clearInterval(iv);
+            setTimeout(() => {
+                injectTicket();
+                show('sc-done');
+                document.getElementById('state-pill').textContent = 'Done';
+                document.getElementById('timer-display').textContent = '00:00';
+                if(btn) btn.disabled = false;
+            }, 500);
+        }
+    }, 700);
+}
+
+function injectTicket(){
+    const tid = Math.floor(108000 + Math.random() * 999);
+    
+    const tagsHtml = `<span class="zd-tag tag-pending">Pending</span><span class="zd-tag tag-drop">call-followup</span>`;
+    
+    // Safely rewrite the entire header HTML instead of depending on nested spans
+    const titleEl = document.getElementById('zd-main-title');
+    if (titleEl) titleEl.innerText = draft ? draft.subject : 'Call Follow-Up';
+    
+    const statusEl = document.getElementById('zd-status');
+    if (statusEl) statusEl.value = 'Pending';
+    
+    const metaEl = document.getElementById('zd-main-meta');
+    if (metaEl) {
+        metaEl.innerHTML = `Ticket #${tid} · sarah.jenkins@example.com · <span id="zd-tags-span">${tagsHtml}</span>`;
+    }
+
+    const rawBody = draft ? draft.body : 'Follow-up sent based on call notes.';
+    const formattedBody = rawBody.split('\n').map(l => l ? `<p style="margin-bottom:5px">${l}</p>` : '').join('');
+    const subj = draft ? draft.subject : 'Call Follow-Up';
+    
+    const t = document.getElementById('zd-thread');
+    if (!t) return;
+    
+    t.insertAdjacentHTML('beforeend',`
+    <div class="msg fade-up">
+      <div class="msg-av av-ai" style="font-size:10px">AI</div>
+      <div class="msg-body">
+        <div class="msg-hd">
+          <span class="msg-author">Hamza M. via CCS Bridge</span>
+          <span class="msg-bdg bdg-ai">AI generated</span>
+          <span class="msg-bdg bdg-auto">Ticket #${tid}</span>
+          <span class="msg-time">${now()}</span>
+        </div>
+        <div class="msg-card">
+          <div class="mc-top"><span class="mc-via">Email</span><span class="mc-lbl">Public reply · Sent to sarah.jenkins@example.com</span><span style="margin-left:auto;font-size:10px;color:#9ca3af;font-family:var(--font-mono)">#${tid} created</span></div>
+          <div class="mc-body"><div class="mc-subj">${subj}</div>${formattedBody}</div>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">
+          <span class="zd-tag tag-drop">call-followup</span>
+          <span class="zd-tag" style="background:#dbeafe;color:#1d4ed8">ai-drafted</span>
+          <span class="zd-tag" style="background:#dcfce7;color:#16a34a">Hamza M.</span>
+        </div>
+      </div>
+    </div>`);
+    
+    setTimeout(() => t.scrollTo({ top: t.scrollHeight, behavior: 'smooth' }), 100);
+}
+
+function resetAll(){
+    secs = 0; state = 'idle'; draft = null; aiOn = true; callDur = '00:00';
+    
+    const btn = document.getElementById('wu-submit');
+    if (btn) btn.disabled = false;
+    
+    document.getElementById('timer-display').textContent = '00:00';
+    document.getElementById('state-pill').textContent = 'Ready';
+    document.getElementById('wu-disp').value = '';
+    document.getElementById('wu-notes').value = 'eSIM QR not received — needs resend';
+    document.getElementById('ai-section').style.display = 'none';
+    document.getElementById('ai-preview').style.display = 'none';
+    document.getElementById('ai-toggle').classList.remove('off');
+    
+    const title = document.getElementById('zd-main-title');
+    if (title) title.innerText = "No Active Ticket";
+    
+    const meta = document.getElementById('zd-main-meta');
+    if (meta) meta.innerHTML = 'Waiting for incoming call... <span id="zd-tags-span" style="display:none;"></span>';
+    
+    const status = document.getElementById('zd-status');
+    if (status) status.value = 'Open';
+    
+    document.querySelectorAll('.ctrl').forEach(c => c.classList.remove('active'));
+    ['ls0','ls1','ls2','ls3'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('active','done');
+    });
+    
+    const t = document.getElementById('zd-thread');
+    if (t) t.innerHTML = '';
+    
+    show('sc-idle');
+}
+</script>
+</body>
+</html>
